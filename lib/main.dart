@@ -53,24 +53,27 @@ class _GalleryScreenState extends State<GalleryScreen> {
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
-    final url =
-        'https://pixabay.com/api/?key=$_apiKey&image_type=photo&per_page=20&page=$_page';
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        debugPrint('API Response: ${response.body}');
+      for (int i = 0; i < 3; i++) { // Loop to fetch 3 pages at once
+        final url =
+            'https://pixabay.com/api/?key=$_apiKey&image_type=photo&per_page=20&page=$_page';
+        final response = await http.get(Uri.parse(url));
 
-        // Explicitly cast the hits to List<Map<String, dynamic>?>
-        final List<Map<String, dynamic>> hits =
-            List<Map<String, dynamic>>.from(data['hits']);
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
 
-        setState(() {
-          _images.addAll(hits);
-          _page++;
-        });
-      } else {
-        debugPrint('API Error: ${response.statusCode}');
+          // Explicitly cast the hits to List<Map<String, dynamic>?>
+          final List<Map<String, dynamic>> hits =
+          List<Map<String, dynamic>>.from(data['hits']);
+
+          setState(() {
+            _images.addAll(hits);
+            _page++; // Increment page for the next loop iteration
+          });
+        } else {
+          debugPrint('API Error: ${response.statusCode}');
+          break; // Stop the loop if there's an error
+        }
       }
     } catch (e) {
       debugPrint('API Exception: $e');
@@ -81,7 +84,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent) {
+        _scrollController.position.maxScrollExtent - 100) {
+      // Trigger fetching more images when close to the bottom
       _fetchImages();
     }
   }
